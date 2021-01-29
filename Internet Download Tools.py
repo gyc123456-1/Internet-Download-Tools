@@ -163,7 +163,7 @@ def update():
     else:
         with open('html.txt') as file:
             html = file.readlines()
-            new_version = html[1037]
+            new_version = html[1034]
         unlink('html.txt')
         new_version = float(new_version[-8:-5])
         if version == new_version:
