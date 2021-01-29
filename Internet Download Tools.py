@@ -7,7 +7,7 @@ import requests
 from win32com.client import Dispatch
 from sys import argv
 
-edition = 1.0
+version = 1.0
 
 if path.isfile('Error.error'):
     with open('Error.error', 'rb') as Error_file:
@@ -152,27 +152,27 @@ def torrent_download(torrent_file_path_list):
 
 
 def update():
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko)'
+                             ' Chrome/78.0.3904.108 Safari/537.36'}
     try:
-        html = requests.get('http://127.0.0.1:8000/').text
-        with open('html.txt', 'w') as file:
+        html = requests.get('https://github.com/gyc123456-1/Internet-Download-Tools', headers=headers).text
+        with open('html.txt', 'w', errors='ignore') as file:
             file.write(html)
-    except Exception:
+    except EOFError:
         print('无法连接到更新服务器,请检查你的网络!')
     else:
         with open('html.txt') as file:
-            new_edition = file.readlines()[7]
+            html = file.readlines()
+            new_version = html[1037]
         unlink('html.txt')
-        new_edition = float(new_edition[-10:-7])
-        if edition == new_edition:
+        new_version = float(new_version[-8:-5])
+        if version == new_version:
             print('当前已是最新版本!')
-        elif edition < new_edition:
-            print('有新版本可用,版本号为{},请到 http://127.0.0.1:8000/ 下载!'.format(new_edition))
+        elif version < new_version:
+            print('有新版本可用,版本号为{},请到正在自动下载!'.format(new_version))
+            url_download(['https://github.com/gyc123456-1/Internet-Download-Tools/archive/main.zip'])
         else:
             print('错误!此程序被修改,正在退出!')
-            with open('Error.error', 'wb') as Error_edit_file:
-                Error_edit_file.write('Error!'.encode('gbk'))
-            system('attrib +r +s +h Error.error')
-            sleep(2)
             exit()
 
 
@@ -205,9 +205,9 @@ except IndexError:
             update()
         elif mode == '8':
             print('''
-                                IDT📥,版本{}
-                    copyright © {}-{} IDT.system-windows
-            '''.format(edition, 2020 + int(edition), ctime()[-4:]))
+                                Internet Download Tools📥,版本{}
+                    copyright © {}-{} system-windows on bilibili and github
+            '''.format(version, 2020 + int(version), ctime()[-4:]))
             sleep(2)
         elif mode == '9':
             break
