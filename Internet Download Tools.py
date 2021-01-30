@@ -1,25 +1,20 @@
 from base64 import b64decode, b32encode
 from hashlib import sha1
 from os import path, getcwd, system, mkdir, unlink
-from time import sleep, ctime, time
+from random import randint
+from time import ctime, time
 from bencodepy import encode, decode
 import requests
 from win32com.client import Dispatch
 from sys import argv
+
+activation_code = ['F9JR9-R5PU9-GR2DT-H9E59-R8T5Y', 'YN98N-784U7-ET7G8-TS69Y-UH860', 'EGGS1-ACT5I-IDT3Y-ONG1J-IU9BY']
 
 version = 1.0
 if version == int(version):
     edition = '正式'
 else:
     edition = '内测'
-
-if path.isfile('Error.error'):
-    with open('Error.error', 'rb') as Error_file:
-        Error_text = Error_file.read().decode('gbk')
-    if Error_text == 'Error!':
-        print('检测到程序被修改,正在退出!')
-        sleep(2)
-        exit()
 
 if not path.isdir('download'):
     mkdir('download')
@@ -183,8 +178,35 @@ def update():
             print('有新版本可用,版本号为{}({}版),正在自动下载!'.format(new_version, new_edition))
             url_download(['https://github.com/gyc123456-1/Internet-Download-Tools/archive/main.zip'])
         else:
-            print('错误!此程序被修改,正在退出!')
-            exit()
+            print('版本错误!')
+
+
+def activation_IDT(code):
+    with open('activation.key', 'w') as Error_file:
+        Error_file.write(code)
+    system('attrib +s +r +h activation.key')
+
+
+def eggs(name):
+    if 'bilibili' in name or 'github' in name:
+        print('恭喜你触发了彩蛋,可以免费激活!')
+        activation_IDT(activation_code[randint(0, len(activation_code))])
+    else:
+        print('输入错误,请重新输入!')
+
+
+if path.isfile('activation.key'):
+    with open('activation.key') as activation_key_file:
+        code = activation_key_file.read()
+    if code in activation_code:
+        activation = True
+        activation_info = '已激活'
+    else:
+        print('使用假冒激活码激活,正在退出!')
+        exit()
+else:
+    activation = False
+    activation_info = '未激活'
 
 
 try:
@@ -193,7 +215,7 @@ except IndexError:
     while True:
         mode = input(
             '请输入模式(1.输入链接下载 2.输入存放链接的txt文档的路径下载 3.迅雷链接下载 4.输入存放迅雷链接的txt文档的路径下载 '
-            '5.TB种子下载 6.输入存放TB种子路径的txt文档的路径下载 7.检查更新 8.关于 9.退出):')
+            '5.TB种子下载 6.输入存放TB种子路径的txt文档的路径下载 7.检查更新 8.关于 9.激活 10.退出):')
         if mode == '1':
             url_download(input('请输入下载链接(多个用英文逗号分开):').rsplit(','))
         elif mode == '2':
@@ -216,14 +238,25 @@ except IndexError:
             update()
         elif mode == '8':
             print('''
-                            Internet Download Tools📥,版本号:{}({}版)
+                        Internet Download Tools,版本号:{}{}版({})
                     copyright © {}-{} system-windows on bilibili and github
-            '''.format(version, edition, 2020 + int(version), ctime()[-4:]))
-            sleep(2)
+            '''.format(version, edition, activation_info, 2020 + int(version), ctime()[-4:]))
         elif mode == '9':
+            if activation:
+                print('您已激活!')
+            else:
+                code = input('请输入你的激活码,输入"获取"获取:')
+                if code == '获取':
+                    pass
+                else:
+                    activation_IDT(code)
+                    print('激活完成,正在重启!')
+                    system(path.abspath(__file__))
+                    exit()
+        elif mode == '10':
             break
         else:
-            print('输入错误,请重新输入!')
+            eggs(mode)
 else:
     if 'http://' in url or 'https://' in url:
         url_download([url])
