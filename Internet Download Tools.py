@@ -238,7 +238,7 @@ except IndexError:
             update()
         elif mode == '8':
             print('''
-                        Internet Download Tools,版本号:{}{}版({})
+                           Internet Download Tools,版本号:{}{}版({})
                     copyright © {}-{} system-windows on bilibili and github
             '''.format(version, edition, activation_info, 2020 + int(version), ctime()[-4:]))
         elif mode == '9':
