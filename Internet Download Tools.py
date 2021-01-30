@@ -169,7 +169,7 @@ def update():
         if version == new_version:
             print('当前已是最新版本!')
         elif version < new_version:
-            print('有新版本可用,版本号为{},请到正在自动下载!'.format(new_version))
+            print('有新版本可用,版本号为{},正在自动下载!'.format(new_version))
             url_download(['https://github.com/gyc123456-1/Internet-Download-Tools/archive/main.zip'])
         else:
             print('错误!此程序被修改,正在退出!')
