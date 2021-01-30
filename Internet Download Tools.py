@@ -168,7 +168,7 @@ def update():
         with open('html.txt') as file:
             html = file.readlines()
         for line in html:
-            if 'Internet Download Tools For Python 3 version:' in line:
+            if 'Internet Download Tools For Python3 version:' in line:
                 new_version = line
         unlink('html.txt')
         new_version = float(new_version[-8:-5])
