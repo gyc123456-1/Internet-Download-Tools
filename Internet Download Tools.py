@@ -160,20 +160,23 @@ def update():
                              ' Chrome/78.0.3904.108 Safari/537.36'}
     try:
         html = requests.get('https://github.com/gyc123456-1/Internet-Download-Tools', headers=headers).text
-        with open('html.txt', 'w', errors='ignore') as file:
-            file.write(html)
     except Exception:
         print('无法连接到更新服务器,请检查你的网络!')
     else:
+        with open('html.txt', 'w', errors='ignore') as file:
+            file.write(html)
         with open('html.txt') as file:
             html = file.readlines()
-            new_version = html[1034]
+        for line in html:
+            if 'Internet Download Tools For Python 3 version:' in line:
+                new_version = line
         unlink('html.txt')
         new_version = float(new_version[-8:-5])
         if new_version == int(new_version):
             new_edition = '正式'
         else:
             new_edition = '内测'
+
         if version == new_version:
             print('当前已是最新版本!')
         elif version < new_version:
