@@ -191,6 +191,9 @@ def eggs(name):
     if 'bilibili' in name or 'github' in name:
         print('恭喜你触发了彩蛋,可以免费激活!')
         activation_IDT(activation_code[randint(0, len(activation_code))])
+        print('激活完成,正在重启!')
+        system(path.abspath(__file__))
+        exit()
     else:
         print('输入错误,请重新输入!')
 
