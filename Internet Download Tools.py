@@ -8,6 +8,10 @@ from win32com.client import Dispatch
 from sys import argv
 
 version = 1.0
+if version == int(version):
+    edition = '正式'
+else:
+    edition = '内测'
 
 if path.isfile('Error.error'):
     with open('Error.error', 'rb') as Error_file:
@@ -158,7 +162,7 @@ def update():
         html = requests.get('https://github.com/gyc123456-1/Internet-Download-Tools', headers=headers).text
         with open('html.txt', 'w', errors='ignore') as file:
             file.write(html)
-    except EOFError:
+    except Exception:
         print('无法连接到更新服务器,请检查你的网络!')
     else:
         with open('html.txt') as file:
@@ -166,10 +170,14 @@ def update():
             new_version = html[1034]
         unlink('html.txt')
         new_version = float(new_version[-8:-5])
+        if new_version == int(new_version):
+            new_edition = '正式'
+        else:
+            new_edition = '内测'
         if version == new_version:
             print('当前已是最新版本!')
         elif version < new_version:
-            print('有新版本可用,版本号为{},正在自动下载!'.format(new_version))
+            print('有新版本可用,版本号为{}({}版),正在自动下载!'.format(new_version, new_edition))
             url_download(['https://github.com/gyc123456-1/Internet-Download-Tools/archive/main.zip'])
         else:
             print('错误!此程序被修改,正在退出!')
@@ -205,9 +213,9 @@ except IndexError:
             update()
         elif mode == '8':
             print('''
-                                Internet Download Tools📥,版本{}
+                            Internet Download Tools📥,版本号:{}({}版)
                     copyright © {}-{} system-windows on bilibili and github
-            '''.format(version, 2020 + int(version), ctime()[-4:]))
+            '''.format(version, edition, 2020 + int(version), ctime()[-4:]))
             sleep(2)
         elif mode == '9':
             break
@@ -216,7 +224,7 @@ except IndexError:
 else:
     if 'http://' in url or 'https://' in url:
         url_download([url])
-    elif 'ed2k://' in url or 'thunder://' in url or 'magnet:?xt=urn:btih:' in url or 'ftp://' in url:
-        thunder_download([url])
-    else:
+    elif path.isfile(url):
         torrent_download([url])
+    else:
+        thunder_download([url])
