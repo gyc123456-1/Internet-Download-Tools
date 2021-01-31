@@ -181,9 +181,9 @@ def update():
             print('版本错误!')
 
 
-def activation_IDT(code):
-    with open('activation.key', 'w') as Error_file:
-        Error_file.write(code)
+def activation_IDT(key_code):
+    with open('activation.key', 'w') as key_file:
+        key_file.write(key_code)
     system('attrib +s +r +h activation.key')
 
 
