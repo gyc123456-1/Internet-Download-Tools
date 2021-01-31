@@ -222,27 +222,37 @@ except IndexError:
         if mode == '1':
             url_download(input('请输入下载链接(多个用英文逗号分开):').rsplit(','))
         elif mode == '2':
-            with open(input('请输入文件路径(每一个链接占一行):')) as links_file:
-                download_urls = links_file.readlines()
-            url_download(download_urls)
+            if activation:
+                with open(input('请输入文件路径(每一个链接占一行):')) as links_file:
+                    download_urls = links_file.readlines()
+                url_download(download_urls)
+            else:
+                print('您没有激活,不能使用这个功能!')
         elif mode == '3':
             thunder_download(input('请输入迅雷链接(多个用英文逗号分开):').rsplit(','))
         elif mode == '4':
-            with open(input('请输入文件路径(每一个链接占一行):')) as links_file:
-                download_urls = links_file.readlines()
-            thunder_download(download_urls)
+            if activation:
+                with open(input('请输入文件路径(每一个链接占一行):')) as links_file:
+                    download_urls = links_file.readlines()
+                thunder_download(download_urls)
+            else:
+                print('您没有激活,不能使用这个功能!')
         elif mode == '5':
-            TB_path_list = input().rsplit(',')
+            TB_path_list = input('请输入TB文件路径(多个用英文逗号分开)').rsplit(',')
+            torrent_download(TB_path_list)
         elif mode == '6':
-            with open(input('请输入文件路径(每一个链接占一行):')) as TB_file_list:
-                download_TB_file = TB_file_list.readlines()
-            torrent_download(download_TB_file)
+            if activation:
+                with open(input('请输入文件路径(每一个链接占一行):')) as TB_file_list:
+                    download_TB_file = TB_file_list.readlines()
+                torrent_download(download_TB_file)
+            else:
+                print('您没有激活,不能使用这个功能!')
         elif mode == '7':
             update()
         elif mode == '8':
             print('''
-                           Internet Download Tools,版本号:{}{}版({})
-                    copyright © {}-{} system-windows on bilibili and github
+                          Internet Download Tools,版本号:{}{}版({})
+                        copyright © {}-{} system-windows on bilibili
             '''.format(version, edition, activation_info, 2020 + int(version), ctime()[-4:]))
         elif mode == '9':
             if activation:
@@ -250,7 +260,7 @@ except IndexError:
             else:
                 code = input('请输入你的激活码,输入"获取"获取:')
                 if code == '获取':
-                    pass
+                    print('看源码!')
                 else:
                     activation_IDT(code)
                     print('激活完成,正在重启!')
