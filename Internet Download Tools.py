@@ -118,13 +118,13 @@ def thunder_download(url_list: list):
                 system('download\\XunLeiWebSetup11.1.6.1242gw.exe')
             else:
                 if 'ed2k://' in thunder_url:
-                    file_name = thunder_url.rsplit('|')[2]
+                    file_name = thunder_url.split('|')[2]
                     thunder.AddTask(thunder_url, file_name, path.join(getcwd(), 'download'))
                     thunder.CommitTasks()
                     print("第{}个任务已建立，开始下载：{}({})……".format(index, file_name, url_list[index - 1]))
                     index += 1
                 else:
-                    file_name = thunder_url.rsplit('/', 1)[-1]
+                    file_name = thunder_url.rsplit('/')[-1]
                     thunder.AddTask(thunder_url, pPath=path.join(getcwd(), 'download'), nStartMode=1,
                                     nOriginThreadCount=10)
                     thunder.CommitTasks()
@@ -220,7 +220,7 @@ except IndexError:
             '请输入模式(1.输入链接下载 2.输入存放链接的txt文档的路径下载 3.迅雷链接下载 4.输入存放迅雷链接的txt文档的路径下载 '
             '5.TB种子下载 6.输入存放TB种子路径的txt文档的路径下载 7.检查更新 8.关于 9.激活 10.退出):')
         if mode == '1':
-            url_download(input('请输入下载链接(多个用英文逗号分开):').rsplit(','))
+            url_download(input('请输入下载链接(多个用英文逗号分开):').split(','))
         elif mode == '2':
             if activation:
                 with open(input('请输入文件路径(每一个链接占一行):')) as links_file:
@@ -229,7 +229,7 @@ except IndexError:
             else:
                 print('您没有激活,不能使用这个功能!')
         elif mode == '3':
-            thunder_download(input('请输入迅雷链接(多个用英文逗号分开):').rsplit(','))
+            thunder_download(input('请输入迅雷链接(多个用英文逗号分开):').split(','))
         elif mode == '4':
             if activation:
                 with open(input('请输入文件路径(每一个链接占一行):')) as links_file:
@@ -238,7 +238,7 @@ except IndexError:
             else:
                 print('您没有激活,不能使用这个功能!')
         elif mode == '5':
-            TB_path_list = input('请输入TB文件路径(多个用英文逗号分开)').rsplit(',')
+            TB_path_list = input('请输入TB文件路径(多个用英文逗号分开)').split(',')
             torrent_download(TB_path_list)
         elif mode == '6':
             if activation:
