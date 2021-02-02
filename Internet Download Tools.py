@@ -167,7 +167,10 @@ def update():
             if 'Internet Download Tools For Python3 version:' in line:
                 new_version = line
         unlink('html.txt')
-        new_version = float(new_version[-8:-5])
+        try:
+            new_version = float(new_version[-9:-5])
+        except Exception:
+            new_version = float(new_version[-8:-5])
         if new_version == int(new_version):
             new_edition = '正式'
         else:
