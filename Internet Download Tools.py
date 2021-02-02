@@ -7,10 +7,11 @@ from bencodepy import encode, decode
 import requests
 from win32com.client import Dispatch
 from sys import argv
+import socket
 
 activation_code = ['F9JR9-R5PU9-GR2DT-H9E59-R8T5Y', 'YN98N-784U7-ET7G8-TS69Y-UH860', 'EGGS1-ACT5I-IDT3Y-ONG1J-IU9BY']
 
-version = 1.0
+version = 2.0
 if version == int(version):
     edition = '正式'
 else:
@@ -184,18 +185,62 @@ def update():
 def activation_IDT(key_code):
     with open('activation.key', 'w') as key_file:
         key_file.write(key_code)
-    system('attrib +s +r +h activation.key')
+    system('attrib +r +h activation.key')
 
 
 def eggs(name):
-    if 'bilibili' in name or 'github' in name:
-        print('恭喜你触发了彩蛋,可以免费激活!')
-        activation_IDT(activation_code[randint(0, len(activation_code))])
+    if 'bilibili' in name:
+        eggs_code = activation_code[randint(0, len(activation_code))]
+        print('恭喜你触发了彩蛋,可以免费激活!会用{}激活码激活!'.format(eggs_code))
+        activation_IDT(eggs_code)
         print('激活完成,正在重启!')
         system(path.abspath(__file__))
         exit()
     else:
         print('输入错误,请重新输入!')
+
+
+def send_client(new_client_socket):
+    file_name = new_client_socket.recv(1024).decode('utf-8')
+    file_content = None
+    try:
+        with open(file_name, 'rb') as f:
+            file_content = f.read()
+    except Exception:
+        print('没有要下载的文件({})'.format(file_name))
+
+    if file_content:
+        new_client_socket.send(file_content)
+
+
+def server():
+    tcp_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp_server_socket.bind(('', int(input('请输入这个服务器端口:'))))
+    tcp_server_socket.listen(128)
+    request = 0
+    server_request = int(input('请输入最大请求次数:'))
+    while request <= server_request:
+        new_client_socket, client_add = tcp_server_socket.accept()
+        send_client(new_client_socket)
+        new_client_socket.close()
+        request += 1
+    tcp_server_socket.close()
+
+
+def client():
+    tcp_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    ip = input('请输入下载服务器的ip:')
+    port = int(input('请输入下载服务器的端口:'))
+    tcp_client_socket.connect((ip, port))
+    download_file_name = input('请输入要下载的文件名:')
+    tcp_client_socket.send(download_file_name.encode('utf-8'))
+    recv_data = tcp_client_socket.recv(1024)
+    if recv_data:
+        with open(path.join('download', download_file_name), 'wb') as f:
+            f.write(recv_data)
+    else:
+        print('没有要下载的文件({})'.format(download_file_name))
+    tcp_client_socket.close()
 
 
 if path.isfile('activation.key'):
@@ -218,7 +263,8 @@ except IndexError:
     while True:
         mode = input(
             '请输入模式(1.输入链接下载 2.输入存放链接的txt文档的路径下载 3.迅雷链接下载 4.输入存放迅雷链接的txt文档的路径下载 '
-            '5.TB种子下载 6.输入存放TB种子路径的txt文档的路径下载 7.检查更新 8.关于 9.激活 10.退出):')
+            '5.TB种子下载 6.输入存放TB种子路径的txt文档的路径下载 7.创建socket服务器 8.下载socket服务器的文件(客户端) '
+            '9.检查更新 10.激活 11.关于 12.退出):')
         if mode == '1':
             url_download(input('请输入下载链接(多个用英文逗号分开):').split(','))
         elif mode == '2':
@@ -248,25 +294,32 @@ except IndexError:
             else:
                 print('您没有激活,不能使用这个功能!')
         elif mode == '7':
-            update()
+            if activation:
+                server()
+            else:
+                print('您没有激活,不能使用这个功能!')
         elif mode == '8':
-            print('''
-                          Internet Download Tools,版本号:{}{}版({})
-                        copyright © {}-{} system-windows on bilibili
-            '''.format(version, edition, activation_info, 2020 + int(version), ctime()[-4:]))
+            client()
         elif mode == '9':
+            update()
+        elif mode == '10':
             if activation:
                 print('您已激活!')
             else:
                 code = input('请输入你的激活码,输入"获取"获取:')
                 if code == '获取':
-                    print('看源码!')
+                    print('自己找彩蛋!')
                 else:
                     activation_IDT(code)
                     print('激活完成,正在重启!')
                     system(path.abspath(__file__))
                     exit()
-        elif mode == '10':
+        elif mode == '11':
+            print('''
+                          Internet Download Tools,版本号:{}{}版({})
+                        copyright © {}-{} system-windows on bilibili
+            '''.format(version, edition, activation_info, 2020 + int(version), ctime()[-4:]))
+        elif mode == '12':
             break
         else:
             eggs(mode)
