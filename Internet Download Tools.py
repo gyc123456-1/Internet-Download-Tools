@@ -1,8 +1,8 @@
 from base64 import b64decode, b32encode
 from hashlib import sha1
 from os import path, getcwd, system, mkdir, unlink
-from random import randint
-from time import ctime, time
+from random import choice
+from time import strftime, time
 from bencodepy import encode, decode
 import requests
 from win32com.client import Dispatch
@@ -11,7 +11,7 @@ import socket
 
 activation_code = ['F9JR9-R5PU9-GR2DT-H9E59-R8T5Y', 'YN98N-784U7-ET7G8-TS69Y-UH860', 'EGGS1-ACT5I-IDT3Y-ONG1J-IU9BY']
 
-version = 2.0
+version = 1.3
 if version == int(version):
     edition = '正式'
 else:
@@ -193,7 +193,7 @@ def activation_IDT(key_code):
 
 def eggs(name):
     if 'bilibili' in name:
-        eggs_code = activation_code[randint(0, len(activation_code))]
+        eggs_code = choice(activation_code)
         print('恭喜你触发了彩蛋,可以免费激活!会用{}激活码激活!'.format(eggs_code))
         activation_IDT(eggs_code)
         print('激活完成,正在重启!')
@@ -311,7 +311,10 @@ except IndexError:
             else:
                 code = input('请输入你的激活码,输入"获取"获取:')
                 if code == '获取':
-                    print('自己找彩蛋!')
+                    if input('输入作者bilibili账号UID:') == '1111098950':
+                        print('激活码是:'+choice(activation_code))
+                    else:
+                        print('输入错误,不能获取!')
                 else:
                     activation_IDT(code)
                     print('激活完成,正在重启!')
@@ -321,7 +324,7 @@ except IndexError:
             print('''
                           Internet Download Tools,版本号:{}{}版({})
                         copyright © {}-{} system-windows on bilibili
-            '''.format(version, edition, activation_info, 2020 + int(version), ctime()[-4:]))
+            '''.format(version, edition, activation_info, int(2020 + int(version)), strftime('%Y')))
         elif mode == '12':
             break
         else:
