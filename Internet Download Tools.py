@@ -1,17 +1,23 @@
 from base64 import b64decode, b32encode
+from email.header import Header
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from hashlib import sha1
 from os import path, getcwd, system, mkdir, unlink
 from random import choice
-from time import strftime, time
-from bencodepy import encode, decode
-import requests
-from win32com.client import Dispatch
+from re import findall
+from smtplib import SMTPException
+from smtplib import SMTP_SSL
+from socket import SOCK_STREAM, socket, AF_INET
 from sys import argv
-import socket
+from time import strftime, time, sleep
+from bencodepy import encode, decode
+from requests import get
+from win32com.client import Dispatch
 
 activation_code = ['F9JR9-R5PU9-GR2DT-H9E59-R8T5Y', 'YN98N-784U7-ET7G8-TS69Y-UH860', 'EGGS1-ACT5I-IDT3Y-ONG1J-IU9BY']
 
-version = 1.3
+version = 1.40
 if version == int(version):
     edition = '正式'
 else:
@@ -33,7 +39,7 @@ def url_download(download_url_list: list):
     for download_url in download_url_list:
         download_file_path = 'download/' + download_url.rsplit('/')[-1]
         try:
-            response = requests.get(download_url, headers=headers)
+            response = get(download_url, headers=headers)
         except Exception:
             print('第{}个链接请求失败，请检查后重试!'.format(index))
             Error += 1
@@ -84,25 +90,27 @@ def url_download(download_url_list: list):
         index += 1
 
     end = time()
+    if path.isfile('download.log'):
+        unlink('download.log')
     if Error == 0:
         print('链接全部下载完成并且没有出错!用时{}秒,文件在download文件夹!'.format(end - start))
     else:
-        with open('download_log.log', 'w') as log_file:
+        with open('download.log', 'w', encoding='utf-8') as log_file:
             log_file.write('')
-        with open('download_log.log', 'a') as log_file:
+        with open('download.log', 'a', encoding='utf-8') as log_file:
             for Error_index in Error_list:
                 log_file.write('第{}个链接({})出错,因为{}!'.format(index, download_url_list[Error_index - 1],
                                                            Error_reason[Error_index - 1]))
-        print('链接全部下载完成但有{}个出错!用时{}秒,日志在本目录下的download_log.log文件,文件在download文件夹!'
+        print('链接全部下载完成但有{}个出错!用时{}秒,日志在本目录下的download.log文件,文件在download文件夹!'
               .format(Error, end - start))
 
 
-def thunder_download(url_list: list):
+def thunder_download(download_url_list: list):
     index = 1
     thunder_url_list = []
-    for thunder_url in url_list:
+    for thunder_url in download_url_list:
         thunder_url: str
-        if 'thunder://' in thunder_url:
+        if thunder_url.startswith('thunder://'):
             print('检测到链接以thunder://开头,已为您添加至工具自带链接下载!')
             strb = thunder_url.lstrip('thunder://')
             urlb = b64decode(strb)
@@ -118,18 +126,18 @@ def thunder_download(url_list: list):
                 print('正在运行安装迅雷程序,有杀毒软件拦截请放行!')
                 system('download\\XunLeiWebSetup11.1.6.1242gw.exe')
             else:
-                if 'ed2k://' in thunder_url:
+                if thunder_url.startswith('ed2k://'):
                     file_name = thunder_url.split('|')[2]
                     thunder.AddTask(thunder_url, file_name, path.join(getcwd(), 'download'))
                     thunder.CommitTasks()
-                    print("第{}个任务已建立，开始下载：{}({})……".format(index, file_name, url_list[index - 1]))
+                    print("第{}个任务已建立，开始下载：{}({})……".format(index, file_name, download_url_list[index - 1]))
                     index += 1
                 else:
                     file_name = thunder_url.rsplit('/')[-1]
                     thunder.AddTask(thunder_url, pPath=path.join(getcwd(), 'download'), nStartMode=1,
                                     nOriginThreadCount=10)
                     thunder.CommitTasks()
-                    print("第{}个任务已建立，开始下载：{}({})……".format(index, file_name, url_list[index - 1]))
+                    print("第{}个任务已建立，开始下载：{}({})……".format(index, file_name, download_url_list[index - 1]))
                     index += 1
     url_download(thunder_url_list)
 
@@ -155,7 +163,7 @@ def update():
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko)'
                              ' Chrome/78.0.3904.108 Safari/537.36'}
     try:
-        html = requests.get('https://github.com/gyc123456-1/Internet-Download-Tools', headers=headers).text
+        html = get('https://github.com/gyc123456-1/Internet-Download-Tools', headers=headers).text
     except Exception:
         print('无法连接到更新服务器,请检查你的网络!')
     else:
@@ -164,13 +172,10 @@ def update():
         with open('html.txt') as file:
             html = file.readlines()
         for line in html:
-            if 'Internet Download Tools For Python3 version:' in line:
+            if '<p>Internet Download Tools For Python3 version:' in line:
                 new_version = line
         unlink('html.txt')
-        try:
-            new_version = float(new_version[-9:-5])
-        except Exception:
-            new_version = float(new_version[-8:-5])
+        new_version = float(findall('<p>Internet Download Tools For Python3 version:(.*?)</p>', new_version)[0])
         if new_version == int(new_version):
             new_edition = '正式'
         else:
@@ -191,8 +196,15 @@ def activation_IDT(key_code):
     system('attrib +r +h activation.key')
 
 
-def eggs(name):
-    if 'bilibili' in name:
+def eggs(input_name):
+    ok = False
+    un_l_list = ['笨蛋', '狗屎', '垃圾', 'SB', 'sb', '250', '猪', '放屁', '屁股', '茅屎']
+    for i in un_l_list:
+        if i in input_name:
+            break
+    else:
+        ok = True
+    if (('bilibili' in input_name) or ('1111098950' in input_name) or ('system-windows' in input_name)) and ok:
         eggs_code = choice(activation_code)
         print('恭喜你触发了彩蛋,可以免费激活!会用{}激活码激活!'.format(eggs_code))
         activation_IDT(eggs_code)
@@ -217,33 +229,63 @@ def send_client(new_client_socket):
 
 
 def server():
-    tcp_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    tcp_server_socket.bind(('', int(input('请输入这个服务器端口:'))))
-    tcp_server_socket.listen(128)
+    server_tcp_server_socket = socket(AF_INET, SOCK_STREAM)
+    server_tcp_server_socket.bind(('', int(input('请输入这个服务器端口:'))))
+    server_tcp_server_socket.listen(128)
     request = 0
     server_request = int(input('请输入最大请求次数:'))
     while request <= server_request:
-        new_client_socket, client_add = tcp_server_socket.accept()
+        new_client_socket, client_add = server_tcp_server_socket.accept()
         send_client(new_client_socket)
         new_client_socket.close()
         request += 1
-    tcp_server_socket.close()
+    server_tcp_server_socket.close()
 
 
 def client():
-    tcp_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_tcp_client_socket = socket(AF_INET, SOCK_STREAM)
     ip = input('请输入下载服务器的ip:')
     port = int(input('请输入下载服务器的端口:'))
-    tcp_client_socket.connect((ip, port))
+    client_tcp_client_socket.connect((ip, port))
     download_file_name = input('请输入要下载的文件名:')
-    tcp_client_socket.send(download_file_name.encode('utf-8'))
-    recv_data = tcp_client_socket.recv(1024)
+    client_tcp_client_socket.send(download_file_name.encode('utf-8'))
+    recv_data = client_tcp_client_socket.recv(1024)
     if recv_data:
         with open(path.join('download', download_file_name), 'wb') as f:
             f.write(recv_data)
     else:
         print('没有要下载的文件({})'.format(download_file_name))
-    tcp_client_socket.close()
+    client_tcp_client_socket.close()
+
+
+def Email(send_activation_code, receiver):
+    host_server = 'smtp.qq.com'  # smtp服务器
+    sender = '512390112@qq.com'  # 发件人
+    pwd = 'dfdxxbymvgrfbied'  # 密码
+
+    mail_title = 'Internet_download_tools激活码'
+
+    msg = MIMEMultipart()
+    msg["Subject"] = Header(mail_title, 'utf-8')
+    msg["From"] = Header('Internet_download_tools v{} {}'.format(version, edition), 'utf-8')
+    msg["To"] = Header(receiver, 'utf-8')
+
+    msg.attach(MIMEText('你的Internet_download_tools v{} {}激活码是:{}'.format(version, edition, send_activation_code),
+                        'plain', 'utf-8'))
+
+    try:
+        smtp = SMTP_SSL(host_server)
+        smtp.set_debuglevel(0)
+        smtp.ehlo(host_server)
+        smtp.login(sender, pwd)
+        smtp.sendmail(sender, receiver, msg.as_string())
+        smtp.quit()
+        print('激活码发送成功!')
+    except SMTPException as reason:
+        reason = str(reason)[str(reason).index("'") + 1:-1]
+        print('激活码发送失败:,因为:' + reason)
+    except TimeoutError:
+        print('smtp服务器出错!')
 
 
 if path.isfile('activation.key'):
@@ -254,11 +296,11 @@ if path.isfile('activation.key'):
         activation_info = '已激活'
     else:
         print('使用假冒激活码激活,正在退出!')
+        sleep(1)
         exit()
 else:
     activation = False
     activation_info = '未激活'
-
 
 try:
     url = argv[1]
@@ -267,12 +309,12 @@ except IndexError:
         mode = input(
             '请输入模式(1.输入链接下载 2.输入存放链接的txt文档的路径下载 3.迅雷链接下载 4.输入存放迅雷链接的txt文档的路径下载 '
             '5.TB种子下载 6.输入存放TB种子路径的txt文档的路径下载 7.创建socket服务器 8.下载socket服务器的文件(客户端) '
-            '9.检查更新 10.激活 11.关于 12.退出):')
+            '9.检查更新 10.激活 11.关于 12.反馈 13.退出):')
         if mode == '1':
             url_download(input('请输入下载链接(多个用英文逗号分开):').split(','))
         elif mode == '2':
             if activation:
-                with open(input('请输入文件路径(每一个链接占一行):')) as links_file:
+                with open(input('请输入文件路径(文件里面每一个链接占一行):')) as links_file:
                     download_urls = links_file.readlines()
                 url_download(download_urls)
             else:
@@ -281,7 +323,7 @@ except IndexError:
             thunder_download(input('请输入迅雷链接(多个用英文逗号分开):').split(','))
         elif mode == '4':
             if activation:
-                with open(input('请输入文件路径(每一个链接占一行):')) as links_file:
+                with open(input('请输入文件路径(文件里面每一个链接占一行):')) as links_file:
                     download_urls = links_file.readlines()
                 thunder_download(download_urls)
             else:
@@ -291,7 +333,7 @@ except IndexError:
             torrent_download(TB_path_list)
         elif mode == '6':
             if activation:
-                with open(input('请输入文件路径(每一个链接占一行):')) as TB_file_list:
+                with open(input('请输入文件路径(文件里面每一个链接占一行):')) as TB_file_list:
                     download_TB_file = TB_file_list.readlines()
                 torrent_download(download_TB_file)
             else:
@@ -312,7 +354,8 @@ except IndexError:
                 code = input('请输入你的激活码,输入"获取"获取:')
                 if code == '获取':
                     if input('输入作者bilibili账号UID:') == '1111098950':
-                        print('激活码是:'+choice(activation_code))
+                        receiver_email = input('请输入你的邮箱,用于接收激活码:')
+                        Email(choice(activation_code), receiver_email)
                     else:
                         print('输入错误,不能获取!')
                 else:
@@ -321,18 +364,33 @@ except IndexError:
                     system(path.abspath(__file__))
                     exit()
         elif mode == '11':
-            print('''
-                          Internet Download Tools,版本号:{}{}版({})
-                        copyright © {}-{} system-windows on bilibili
-            '''.format(version, edition, activation_info, int(2020 + int(version)), strftime('%Y')))
+            print('''                             Internet Download Tools,版本号:{}{}版({})
+                            copyright © {}-{} system-windows on bilibili'''
+                  .format(version, edition, activation_info, int(2020 + int(version)), strftime('%Y')))
         elif mode == '12':
+            feedback = input('请输入你的反馈:')
+            name = input('请输入你的姓名(可选):')
+            if not name:
+                name = '匿名'
+            try:
+                tcp_client_socket = socket(AF_INET, SOCK_STREAM)
+                tcp_client_socket.connect(('192.168.1.104', 8888))
+                tcp_client_socket.send('{},{},{}'.format(feedback, name, strftime('%Y-%m-%d %H:%M:%S')).encode('utf-8'))
+            except OSError:
+                print('反馈服务器连接出错,请检查你的网络!')
+            else:
+                tcp_client_socket.close()
+                print('谢谢你的反馈!')
+        elif mode == '13':
             break
         else:
             eggs(mode)
 else:
-    if 'http://' in url or 'https://' in url:
-        url_download([url])
-    elif path.isfile(url):
-        torrent_download([url])
-    else:
-        thunder_download([url])
+    url_list = url.split(',')
+    for url in url_list:
+        if url.startswith('http://') or url.startswith('https://'):
+            url_download([url])
+        elif path.isfile(url):
+            torrent_download([url])
+        else:
+            thunder_download([url])
