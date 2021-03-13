@@ -14,10 +14,11 @@ from time import strftime, time, sleep
 from bencodepy import encode, decode
 from requests import get
 from win32com.client import Dispatch
+from zipfile import ZipFile
 
 activation_code = ['F9JR9-R5PU9-GR2DT-H9E59-R8T5Y', 'YN98N-784U7-ET7G8-TS69Y-UH860', 'EGGS1-ACT5I-IDT3Y-ONG1J-IU9BY']
 
-version = 1.40
+version = 1.45
 if version == int(version):
     edition = '正式'
 else:
@@ -186,6 +187,9 @@ def update():
         elif version < new_version:
             print('有新版本可用,版本号为{}({}版),正在自动下载!'.format(new_version, new_edition))
             url_download(['https://github.com/gyc123456-1/Internet-Download-Tools/archive/main.zip'])
+            idt = ZipFile(path.join('download', 'main.zip'))
+            idt.extract('Internet_download_tools.exe', '..')
+            unlink(path.join('download', 'main.zip'))
         else:
             print('版本错误!')
 
